@@ -1,0 +1,25 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Jupyter
+*.log
+
+# Data: исходный датасет скачивается отдельно с Kaggle
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Обученные модели не коммитим, их можно воспроизвести по ноутбукам
+models/*
+!models/.gitkeep
+
+# Локальные настройки
+.env
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
