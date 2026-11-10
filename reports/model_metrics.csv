@@ -1,0 +1,4 @@
+Модель,threshold,accuracy,precision,recall,f1,roc_auc,pr_auc
+Logistic Regression,0.5,0.8055,0.6562,0.5615,0.6052,0.8421,0.6345
+Decision Tree,0.5,0.7324,0.4975,0.7995,0.6133,0.8251,0.6254
+Random Forest,0.5,0.8027,0.6644,0.5187,0.5826,0.8425,0.6548
