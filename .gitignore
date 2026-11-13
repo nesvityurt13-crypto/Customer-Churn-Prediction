@@ -7,15 +7,11 @@ __pycache__/
 # Jupyter
 *.log
 
-# Data: исходный датасет скачивается отдельно с Kaggle
-data/raw/*
-!data/raw/.gitkeep
-data/processed/*
-!data/processed/.gitkeep
+# Данные скачиваются и создаются локально, в Git не попадают
+data/
 
 # Обученные модели не коммитим, их можно воспроизвести по ноутбукам
-models/*
-!models/.gitkeep
+models/
 
 # Внутренние заметки и правила проекта — не публикуются
 src/

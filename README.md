@@ -26,10 +26,10 @@
 
 ```text
 Customer-Churn-Prediction/
-├── data/
-│   ├── raw/                      # исходный CSV (не публикуется)
-│   └── processed/                # train/test после подготовки (не публикуется)
-├── models/                       # сохранённая модель (не публикуется)
+├── data/                         # создаётся локально, не публикуется
+│   ├── raw/                      # исходный CSV
+│   └── processed/                # train/test после подготовки
+├── models/                       # сохранённая модель, не публикуется
 ├── notebooks/
 │   ├── 01_data_overview.ipynb
 │   ├── 02_eda.ipynb
@@ -122,7 +122,7 @@ pip install -r requirements.txt
 
 ### 2. Скачать данные
 
-Скачать `WA_Fn-UseC_-Telco-Customer-Churn.csv` с [Kaggle](https://www.kaggle.com/datasets/blastchar/telco-customer-churn) и положить в `data/raw/`. Файлы данных не хранятся в репозитории.
+Скачать `WA_Fn-UseC_-Telco-Customer-Churn.csv` с [Kaggle](https://www.kaggle.com/datasets/blastchar/telco-customer-churn) и положить в `data/raw/` (папку создайте, если её нет). Файлы данных не хранятся в репозитории.
 
 ### 3. Запустить ноутбуки
 
