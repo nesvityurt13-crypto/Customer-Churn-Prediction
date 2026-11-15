@@ -34,7 +34,8 @@ Customer-Churn-Prediction/
 │   ├── 01_data_overview.ipynb
 │   ├── 02_eda.ipynb
 │   ├── 03_feature_engineering.ipynb
-│   └── 04_model_training_evaluation.ipynb
+│   ├── 04_model_training_evaluation.ipynb
+│   └── 05_model_robustness.ipynb
 ├── sql/
 │   ├── 01_create_tables.sql
 │   ├── 02_load_and_check_data.sql
@@ -43,6 +44,10 @@ Customer-Churn-Prediction/
 │   ├── project_conclusions.md
 │   ├── cv_metrics.csv
 │   ├── model_metrics.csv
+│   ├── repeated_cv_metrics.csv
+│   ├── permutation_importance.csv
+│   ├── default_feature_importance.csv
+│   ├── threshold_sensitivity.csv
 │   └── sql_results.txt
 ├── requirements.txt
 └── README.md
@@ -56,7 +61,8 @@ Customer-Churn-Prediction/
 4. **Подготовка признаков** — очистка, стратифицированное разбиение 80/20, `ColumnTransformer` и One-Hot Encoding внутри `Pipeline`.
 5. **Моделирование** — Logistic Regression, Decision Tree, Random Forest, `GridSearchCV` (5-fold, scoring = PR-AUC).
 6. **Оценка** — выбор порога по out-of-fold предсказаниям, метрики и матрица ошибок на тесте, ROC- и PR-кривые, важность признаков.
-7. **Бизнес-выводы** — группа высокого риска, распределение по договорам, условная сумма ежемесячных платежей под риском.
+7. **Проверка устойчивости** — повторная кросс-валидация 5×3, permutation importance и чувствительность метрик к порогу.
+8. **Бизнес-выводы** — группа высокого риска, распределение по договорам, условная сумма ежемесячных платежей под риском.
 
 ## Основные результаты
 
@@ -98,6 +104,14 @@ Customer-Churn-Prediction/
 
 При стандартном пороге 0,5 Precision выше (0,6644), но Recall падает до 0,5187. Выбор порога — управленческий компромисс между стоимостью пропущенного клиента и стоимостью лишнего контакта.
 
+### Устойчивость и интерпретация
+
+Повторная кросс-валидация 5×3 даёт PR-AUC **0,6649 ± 0,0212** и ROC-AUC **0,8486 ± 0,0115**. Результат близок к одиночной 5-fold. Разброс PR-AUC около 0,02 означает, что небольшое преимущество Random Forest над Logistic Regression может находиться в пределах случайной вариации.
+
+Permutation importance на тесте выделяет `tenure`, `Contract`, `TotalCharges`, `InternetService`, `TechSupport` и `OnlineSecurity`. Встроенная важность Random Forest показывает ту же картину, но на уровне отдельных one-hot категорий. Расхождения по `MonthlyCharges` объясняются корреляцией с `TotalCharges`.
+
+Чувствительность к порогу (OOF): при 0,2781 Precision — 0,5235, Recall — 0,7987, F1 — 0,6324; при 0,5 — Precision 0,6708, Recall 0,5043. Диапазон 0,25–0,30 — компромисс в пользу полноты. Подробнее — в `notebooks/05_model_robustness.ipynb`.
+
 ### Бизнес-интерпретация
 
 - Модель отметила **573 клиента (40,7% теста)** как группу высокого риска.
@@ -126,7 +140,7 @@ pip install -r requirements.txt
 
 ### 3. Запустить ноутбуки
 
-Ноутбуки выполняются по порядку: `01` → `02` → `03` → `04`. Ноутбук `03` сохраняет обработанные данные в `data/processed/`, ноутбук `04` — модель в `models/churn_model.joblib`.
+Ноутбуки выполняются по порядку: `01` → `02` → `03` → `04` → `05`. Ноутбук `03` сохраняет обработанные данные в `data/processed/`, ноутбук `04` — модель в `models/churn_model.joblib`, ноутбук `05` использует её для проверки устойчивости и интерпретации.
 
 Если нужен отдельный Jupyter kernel:
 
@@ -137,7 +151,7 @@ python -m ipykernel install --user --name churn-venv --display-name ".venv (3.13
 Запуск из командной строки:
 
 ```powershell
-python -m jupyter nbconvert --to notebook --execute --inplace notebooks\01_data_overview.ipynb notebooks\02_eda.ipynb notebooks\03_feature_engineering.ipynb notebooks\04_model_training_evaluation.ipynb --ExecutePreprocessor.kernel_name=churn-venv --ExecutePreprocessor.timeout=1800
+python -m jupyter nbconvert --to notebook --execute --inplace notebooks\01_data_overview.ipynb notebooks\02_eda.ipynb notebooks\03_feature_engineering.ipynb notebooks\04_model_training_evaluation.ipynb notebooks\05_model_robustness.ipynb --ExecutePreprocessor.kernel_name=churn-venv --ExecutePreprocessor.timeout=1800
 ```
 
 ### 4. SQL-анализ в PostgreSQL
@@ -170,7 +184,7 @@ docker exec churn-postgres psql -U churn_user -d churn_db -f sql/03_business_ana
 - Данные демонстрационные, один срез без временной истории.
 - Использовано одно разбиение train/test; при другом `random_state` метрики немного изменятся.
 - Нет стоимости контакта, скидки и фактической эффективности удержания, поэтому реальный ROI не рассчитывается.
-- Важность признаков не доказывает причинно-следственную связь.
+- Важность признаков не доказывает причинно-следственную связь; permutation importance может быть нестабильной при коррелированных признаках.
 - Порог Recall ≥ 0,80 — учебное допущение, а не бизнес-требование.
 
 Подробные выводы, интерпретация и рекомендации — в [reports/project_conclusions.md](reports/project_conclusions.md).
