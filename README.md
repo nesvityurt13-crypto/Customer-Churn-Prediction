@@ -35,7 +35,8 @@ Customer-Churn-Prediction/
 │   ├── 02_eda.ipynb
 │   ├── 03_feature_engineering.ipynb
 │   ├── 04_model_training_evaluation.ipynb
-│   └── 05_model_robustness.ipynb
+│   ├── 05_model_robustness.ipynb
+│   └── 06_calibration_and_thresholds.ipynb
 ├── sql/
 │   ├── 01_create_tables.sql
 │   ├── 02_load_and_check_data.sql
@@ -48,6 +49,8 @@ Customer-Churn-Prediction/
 │   ├── permutation_importance.csv
 │   ├── default_feature_importance.csv
 │   ├── threshold_sensitivity.csv
+│   ├── calibration_metrics.csv
+│   ├── cost_sensitive_thresholds.csv
 │   └── sql_results.txt
 ├── requirements.txt
 └── README.md
@@ -62,7 +65,8 @@ Customer-Churn-Prediction/
 5. **Моделирование** — Logistic Regression, Decision Tree, Random Forest, `GridSearchCV` (5-fold, scoring = PR-AUC).
 6. **Оценка** — выбор порога по out-of-fold предсказаниям, метрики и матрица ошибок на тесте, ROC- и PR-кривые, важность признаков.
 7. **Проверка устойчивости** — повторная кросс-валидация 5×3, permutation importance и чувствительность метрик к порогу.
-8. **Бизнес-выводы** — группа высокого риска, распределение по договорам, условная сумма ежемесячных платежей под риском.
+8. **Калибровка и стоимость ошибок** — проверка вероятностей, сравнение sigmoid и isotonic, порог при разных отношениях стоимости FN/FP.
+9. **Бизнес-выводы** — группа высокого риска, распределение по договорам, условная сумма ежемесячных платежей под риском.
 
 ## Основные результаты
 
@@ -112,6 +116,12 @@ Permutation importance на тесте выделяет `tenure`, `Contract`, `T
 
 Чувствительность к порогу (OOF): при 0,2781 Precision — 0,5235, Recall — 0,7987, F1 — 0,6324; при 0,5 — Precision 0,6708, Recall 0,5043. Диапазон 0,25–0,30 — компромисс в пользу полноты. Подробнее — в `notebooks/05_model_robustness.ipynb`.
 
+### Калибровка и стоимость ошибок
+
+Random Forest уже даёт достаточно калиброванные вероятности: Brier score **0,1364**, log loss **0,4190**. Sigmoid и isotonic почти не меняют ROC-AUC и PR-AUC; isotonic немного улучшает Brier score до **0,1361** и log loss до **0,4186**, но выигрыш минимален.
+
+Оптимальный порог зависит от отношения стоимости FN/FP: при 1 — **0,46**, при 2 — **0,34**, при 5 — **0,17**, при 10 — **0,08**. Порог 0,2781 соответствует отношению между 2 и 5. При очень высоких отношениях модель отмечает около 77% клиентов, что может быть неприменимо на практике. Это анализ чувствительности, а не расчёт ROI. Подробнее — в `notebooks/06_calibration_and_thresholds.ipynb`.
+
 ### Бизнес-интерпретация
 
 - Модель отметила **573 клиента (40,7% теста)** как группу высокого риска.
@@ -140,7 +150,7 @@ pip install -r requirements.txt
 
 ### 3. Запустить ноутбуки
 
-Ноутбуки выполняются по порядку: `01` → `02` → `03` → `04` → `05`. Ноутбук `03` сохраняет обработанные данные в `data/processed/`, ноутбук `04` — модель в `models/churn_model.joblib`, ноутбук `05` использует её для проверки устойчивости и интерпретации.
+Ноутбуки выполняются по порядку: `01` → `02` → `03` → `04` → `05` → `06`. Ноутбук `03` сохраняет обработанные данные в `data/processed/`, ноутбук `04` — модель в `models/churn_model.joblib`, ноутбуки `05` и `06` используют её для проверки устойчивости, интерпретации, калибровки и выбора порога.
 
 Если нужен отдельный Jupyter kernel:
 
@@ -151,7 +161,7 @@ python -m ipykernel install --user --name churn-venv --display-name ".venv (3.13
 Запуск из командной строки:
 
 ```powershell
-python -m jupyter nbconvert --to notebook --execute --inplace notebooks\01_data_overview.ipynb notebooks\02_eda.ipynb notebooks\03_feature_engineering.ipynb notebooks\04_model_training_evaluation.ipynb notebooks\05_model_robustness.ipynb --ExecutePreprocessor.kernel_name=churn-venv --ExecutePreprocessor.timeout=1800
+python -m jupyter nbconvert --to notebook --execute --inplace notebooks\01_data_overview.ipynb notebooks\02_eda.ipynb notebooks\03_feature_engineering.ipynb notebooks\04_model_training_evaluation.ipynb notebooks\05_model_robustness.ipynb notebooks\06_calibration_and_thresholds.ipynb --ExecutePreprocessor.kernel_name=churn-venv --ExecutePreprocessor.timeout=1800
 ```
 
 ### 4. SQL-анализ в PostgreSQL
@@ -186,5 +196,6 @@ docker exec churn-postgres psql -U churn_user -d churn_db -f sql/03_business_ana
 - Нет стоимости контакта, скидки и фактической эффективности удержания, поэтому реальный ROI не рассчитывается.
 - Важность признаков не доказывает причинно-следственную связь; permutation importance может быть нестабильной при коррелированных признаках.
 - Порог Recall ≥ 0,80 — учебное допущение, а не бизнес-требование.
+- Стоимости ошибок в анализе порога гипотетические: реальных цен контакта и удержания в данных нет.
 
 Подробные выводы, интерпретация и рекомендации — в [reports/project_conclusions.md](reports/project_conclusions.md).
