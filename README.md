@@ -37,12 +37,15 @@ Customer-Churn-Prediction/
 │   ├── 04_model_training_evaluation.ipynb
 │   ├── 05_model_robustness.ipynb
 │   └── 06_calibration_and_thresholds.ipynb
+├── scripts/
+│   └── predict.py
 ├── sql/
 │   ├── 01_create_tables.sql
 │   ├── 02_load_and_check_data.sql
 │   └── 03_business_analysis.sql
 ├── reports/
 │   ├── project_conclusions.md
+│   ├── model_card.md
 │   ├── cv_metrics.csv
 │   ├── model_metrics.csv
 │   ├── repeated_cv_metrics.csv
@@ -188,6 +191,18 @@ docker exec churn-postgres psql -U churn_user -d churn_db -f sql/03_business_ana
 ```
 
 Подключение в pgAdmin 4: host `localhost`, port `5433`, database `churn_db`, user `churn_user`.
+
+## Быстрый скоринг
+
+После обучения модели можно получить предсказания для новых клиентов:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\predict.py data\new_clients.csv
+```
+
+Скрипт принимает CSV с 19 признаками, которые использовались при обучении, и сохраняет `reports/churn_predictions.csv` с вероятностью оттока и предсказанным классом. Порог по умолчанию — `0.2781`, его можно изменить через `--threshold`. Если во входном файле есть `customerID`, он попадёт в результат.
+
+Подробное описание модели, назначения и ограничений — в [reports/model_card.md](reports/model_card.md).
 
 ## Ограничения
 
